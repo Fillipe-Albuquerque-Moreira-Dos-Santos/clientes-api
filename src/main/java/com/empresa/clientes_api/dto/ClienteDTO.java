@@ -21,6 +21,6 @@ public class ClienteDTO {
     @NotBlank(message = "E-mail é obrigatório")
     private String email;
 
-    private String logotipo; // Pode ser uma URL ou caminho do logotipo após o upload
+    private String logotipo;
 
 }
