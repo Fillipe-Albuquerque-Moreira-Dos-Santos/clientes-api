@@ -22,6 +22,7 @@
 	</properties>
 
 	<dependencies>
+		<!-- Dependência do Spring Boot -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-data-jdbc</artifactId>
@@ -73,6 +74,36 @@
 			<artifactId>mssql-jdbc</artifactId>
 			<version>9.4.1.jre8</version>
 		</dependency>
+
+		<!-- Dependência do PrimeFaces -->
+		<dependency>
+			<groupId>org.primefaces</groupId>
+			<artifactId>primefaces</artifactId>
+			<version>12.0.0</version>
+		</dependency>
+
+		<!-- Dependência do JSF -->
+		<dependency>
+			<groupId>javax.faces</groupId>
+			<artifactId>javax.faces-api</artifactId>
+			<version>2.3</version>
+			<scope>provided</scope>
+		</dependency>
+
+		<!-- Dependência para JAX-RS (consumo de APIs REST) -->
+		<dependency>
+			<groupId>javax.ws.rs</groupId>
+			<artifactId>javax.ws.rs-api</artifactId>
+			<version>2.1.1</version>
+		</dependency>
+
+		<!-- Dependência para realizar requisições HTTP -->
+		<dependency>
+			<groupId>org.apache.httpcomponents</groupId>
+			<artifactId>httpclient</artifactId>
+			<version>4.5.13</version>
+		</dependency>
+
 	</dependencies>
 
 	<build>

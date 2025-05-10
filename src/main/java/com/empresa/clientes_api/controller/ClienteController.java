@@ -42,8 +42,7 @@ public class ClienteController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> removerCliente(@PathVariable Long id) {
         boolean isRemoved = clienteService.removerCliente(id);
-        return isRemoved ? ResponseEntity.noContent().build()
-                : ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        return isRemoved ? ResponseEntity.noContent().build() : ResponseEntity.status(HttpStatus.NOT_FOUND).build();
     }
 
     // Exemplo de um método de upload de imagem para o logotipo
