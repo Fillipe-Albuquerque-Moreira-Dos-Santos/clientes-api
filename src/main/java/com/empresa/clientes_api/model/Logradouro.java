@@ -4,6 +4,7 @@ import lombok.Data;
 
 import javax.persistence.*;
 
+
 @Entity
 @Table(name = "logradouro")  // Ajustando o nome da tabela para 'logradouro'
 @Data
@@ -20,6 +21,16 @@ public class Logradouro {
     @ManyToOne
     @JoinColumn(name = "id_cliente", referencedColumnName = "id_cliente") // Relacionamento com Cliente
     private Cliente cliente;
+
+    // ✅ Construtor necessário para sua lógica
+    public Logradouro(String endereco, Cliente cliente) {
+        this.endereco = endereco;
+        this.cliente = cliente;
+    }
+
+    // ✅ Construtor padrão para o JPA
+    public Logradouro() {
+    }
 
     // Outros atributos e métodos
 }

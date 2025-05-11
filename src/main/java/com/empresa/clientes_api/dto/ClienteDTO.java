@@ -1,26 +1,27 @@
 package com.empresa.clientes_api.dto;
 
-
 import lombok.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotBlank;
+import java.util.List;
 
 @Getter
 @Setter
 @ToString
 @NoArgsConstructor
-@AllArgsConstructor
-
 public class ClienteDTO {
 
-    @NotBlank(message = "Nome é obrigatório")
     private String nome;
-
-    @Email(message = "E-mail inválido")
-    @NotBlank(message = "E-mail é obrigatório")
     private String email;
+    private List<String> logradouros;  // Lista de logradouros (endereços)
+    private MultipartFile logotipo;    // Logotipo do cliente
 
-    private String logotipo;
-
+    public ClienteDTO(String nome, String email, List<String> logradouros, MultipartFile logotipo) {
+        this.nome = nome;
+        this.email = email;
+        this.logradouros = logradouros;
+        this.logotipo = logotipo;
+    }
 }
