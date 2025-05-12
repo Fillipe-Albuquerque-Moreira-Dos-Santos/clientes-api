@@ -11,7 +11,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/logradouros")
 @AllArgsConstructor
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "http://localhost:8081")
 public class LogradouroController {
 
     private final LogradouroService logradouroService;

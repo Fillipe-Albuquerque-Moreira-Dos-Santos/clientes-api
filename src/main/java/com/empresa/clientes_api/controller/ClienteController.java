@@ -19,30 +19,22 @@ import java.util.Map;
 @AllArgsConstructor
 @RestController
 @RequestMapping("/clientes")
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "http://localhost:8081")
 public class ClienteController {
 
     private final ClienteService clienteService;
 
-    // Cadastrar cliente com logradouro
-    @PostMapping("/salvar-cliente")
-    public ResponseEntity<?> criarCliente(
-            @RequestParam String nome,
-            @RequestParam String email,
-            @RequestParam String logradouro,
-            @RequestParam(required = false) MultipartFile file) {
+    @PostMapping(value = "/salvar-cliente", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ClienteDTO> salvarCliente(
+            @RequestParam("nome") String nome,
+            @RequestParam("email") String email,
+            @RequestParam("logradouro") String logradouro,
+            @RequestParam(value = "file", required = false) MultipartFile logotipo) {
 
-        try {
-            ClienteDTO resultado = clienteService.criarCliente(nome, email,
-                    Collections.singletonList(logradouro), file);
-            return ResponseEntity.status(HttpStatus.CREATED).body(resultado);
-        } catch (ClienteJaCadastradoException e) {
-            return ResponseEntity.status(HttpStatus.CONFLICT)
-                    .body(Map.of("erro", "Cliente com email já cadastrado"));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("erro", "Erro ao cadastrar cliente: " + e.getMessage()));
-        }
+        ClienteDTO clienteDTO = clienteService.criarCliente(nome, email, Collections.singletonList(logradouro), logotipo);
+
+        // Retorna o DTO com os dados do cliente salvo
+        return ResponseEntity.status(HttpStatus.CREATED).body(clienteDTO);
     }
 
     // Listar todos os clientes
@@ -95,7 +87,7 @@ public class ClienteController {
     }
 
     // Excluir cliente
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/clientes/{id}")
     public ResponseEntity<?> excluirCliente(@PathVariable Long id) {
         try {
             boolean resultado = clienteService.deletar(id);

@@ -18,40 +18,45 @@ import java.util.stream.Collectors;
 
 @AllArgsConstructor
 @Service
-@Transactional
 public class ClienteService {
 
     private final ClienteRepository clienteRepository;
 
 
     public ClienteDTO criarCliente(String nome, String email, List<String> logradouros, MultipartFile logotipo) {
-
-        // Verifica se o tem email cadastrado
+        // Verificando se o cliente já existe pelo email
         if (clienteRepository.existsByEmail(email)) {
-            throw new ClienteJaCadastradoException();
+            throw new RuntimeException("Cliente com o e-mail já cadastrado.");
         }
 
+        // Criando um novo cliente
         Cliente cliente = new Cliente();
         cliente.setNome(nome);
         cliente.setEmail(email);
 
-        // Logotipo ver se tem
-        if (logotipo != null && !logotipo.isEmpty()) {
+        // Salvando o logotipo como byte[] no banco de dados
+        if (logotipo != null) {
             try {
                 cliente.setLogotipo(logotipo.getBytes());
             } catch (IOException e) {
-                throw new ErroProcessandoLogotipoException();
+                throw new RuntimeException("Erro ao processar o logotipo.", e);
             }
         }
 
+        // Criando a lista de logradouros
         if (logradouros != null && !logradouros.isEmpty()) {
-            List<Logradouro> logradourosList = logradouros.stream().map(endereco -> new Logradouro(endereco, cliente)).collect(Collectors.toList());
+            List<Logradouro> logradourosList = logradouros.stream()
+                    .map(endereco -> new Logradouro(endereco, cliente))  // Aqui estamos passando o endereco e cliente
+                    .collect(Collectors.toList());
             cliente.setLogradouros(logradourosList);
         }
 
+        // Salvando o cliente no banco de dados
         Cliente clienteSalvo = clienteRepository.save(cliente);
 
+        // Retornando o DTO com os dados salvos
         return new ClienteDTO(clienteSalvo);
+
     }
 
 
