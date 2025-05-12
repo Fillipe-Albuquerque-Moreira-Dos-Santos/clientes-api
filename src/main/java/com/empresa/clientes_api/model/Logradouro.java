@@ -1,6 +1,7 @@
 package com.empresa.clientes_api.model;
 
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
 
@@ -8,29 +9,23 @@ import javax.persistence.*;
 @Entity
 @Table(name = "logradouro")  // Ajustando o nome da tabela para 'logradouro'
 @Data
+@NoArgsConstructor
 public class Logradouro {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY) // Gerando o ID automaticamente
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_logradouro") // Coluna correspondente à tabela SQL
     private Long id;
 
-    @Column(name = "logradouro") // Coluna de endereço
-    private String endereco;
+    @Column(name = "logradouro")
+    private String logradouro;
 
     @ManyToOne
-    @JoinColumn(name = "id_cliente", referencedColumnName = "id_cliente") // Relacionamento com Cliente
+    @JoinColumn(name = "id_cliente", referencedColumnName = "id_cliente")
     private Cliente cliente;
 
-    // ✅ Construtor necessário para sua lógica
-    public Logradouro(String endereco, Cliente cliente) {
-        this.endereco = endereco;
+    public Logradouro(String logradouro, Cliente cliente) {
+        this.logradouro = logradouro;
         this.cliente = cliente;
     }
-
-    // ✅ Construtor padrão para o JPA
-    public Logradouro() {
-    }
-
-    // Outros atributos e métodos
 }
