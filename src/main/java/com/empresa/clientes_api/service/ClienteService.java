@@ -1,17 +1,13 @@
 package com.empresa.clientes_api.service;
 
 import com.empresa.clientes_api.dto.ClienteDTO;
-import com.empresa.clientes_api.dto.LogradouroDTO;
-import com.empresa.clientes_api.exception.ClienteJaCadastradoException;
-import com.empresa.clientes_api.exception.ErroProcessandoLogotipoException;
 import com.empresa.clientes_api.model.Cliente;
 import com.empresa.clientes_api.model.Logradouro;
 import com.empresa.clientes_api.repository.ClienteRepository;
+import com.empresa.clientes_api.repository.LogradouroRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-
-import javax.transaction.Transactional;
 import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -22,20 +18,18 @@ public class ClienteService {
 
     private final ClienteRepository clienteRepository;
 
+    private final LogradouroRepository logradouroRepository;
 
     public ClienteDTO criarCliente(String nome, String email, List<String> logradouros, MultipartFile logotipo) {
-        // Verificando se o cliente já existe pelo email
         if (clienteRepository.existsByEmail(email)) {
             throw new RuntimeException("Cliente com o e-mail já cadastrado.");
         }
 
-        // Criando um novo cliente
         Cliente cliente = new Cliente();
         cliente.setNome(nome);
         cliente.setEmail(email);
 
-        // Salvando o logotipo como byte[] no banco de dados
-        if (logotipo != null) {
+        if (logotipo != null && !logotipo.isEmpty()) {
             try {
                 cliente.setLogotipo(logotipo.getBytes());
             } catch (IOException e) {
@@ -43,21 +37,28 @@ public class ClienteService {
             }
         }
 
-        // Criando a lista de logradouros
-        if (logradouros != null && !logradouros.isEmpty()) {
-            List<Logradouro> logradourosList = logradouros.stream()
-                    .map(endereco -> new Logradouro(endereco, cliente))  // Aqui estamos passando o endereco e cliente
-                    .collect(Collectors.toList());
-            cliente.setLogradouros(logradourosList);
-        }
+        // Primeiro salva o cliente sem logradouros para obter o ID
+        Cliente salvo = clienteRepository.save(cliente);
 
-        // Salvando o cliente no banco de dados
-        Cliente clienteSalvo = clienteRepository.save(cliente);
+        List<Logradouro> listaLogradouros = logradouros.stream()
+                .map(nomeLogradouro -> {
+                    Logradouro logradouro = logradouroRepository.findByLogradouro(nomeLogradouro)
+                            .orElseThrow(() -> new RuntimeException("Logradouro não encontrado: " + nomeLogradouro));
+                    logradouro.setCliente(salvo); // Vínculo essencial aqui
+                    return logradouro;
+                })
+                .collect(Collectors.toList());
 
-        // Retornando o DTO com os dados salvos
-        return new ClienteDTO(clienteSalvo);
+        // Atualiza os logradouros com o cliente associado
+        logradouroRepository.saveAll(listaLogradouros);
 
+        // Se quiser manter bidirecional, pode setar os logradouros no cliente
+        salvo.setLogradouros(listaLogradouros);
+
+        return new ClienteDTO(salvo);
     }
+
+
 
 
     // Método para encontrar todos os clientes
@@ -94,26 +95,6 @@ public class ClienteService {
         return new ClienteDTO(clienteAtualizado);
     }
 
-    /**
-     * Método específico para atualizar apenas o logradouro de um cliente
-     * @param id ID do cliente
-     * @param logradouroDTO DTO contendo o novo logradouro
-     * @return ClienteDTO com dados atualizados
-     */
-    public ClienteDTO atualizarLogradouro(Long id, LogradouroDTO logradouroDTO) {
-        Cliente cliente = obterCliente(id);
-
-        if (cliente.getLogradouros() == null || cliente.getLogradouros().isEmpty()) {
-            cliente.setLogradouros(List.of(new Logradouro(logradouroDTO.getLogradouro(), cliente)));
-        } else {
-            Logradouro logradouro = cliente.getLogradouros().get(0);
-            logradouro.setLogradouro(logradouroDTO.getLogradouro());
-        }
-
-        Cliente clienteAtualizado = clienteRepository.save(cliente);
-        return new ClienteDTO(clienteAtualizado);
-    }
-
     public boolean deletar(Long id) {
         Cliente cliente = obterCliente(id);
         clienteRepository.delete(cliente);
@@ -135,5 +116,11 @@ public class ClienteService {
         } catch (Exception e) {
             throw new RuntimeException("Erro ao salvar o logotipo: " + e.getMessage());
         }
+    }
+
+    // Buscar cliente por ID
+    public Cliente buscarPorId(Long id) {
+        return clienteRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Cliente não encontrado com ID: " + id));
     }
 }

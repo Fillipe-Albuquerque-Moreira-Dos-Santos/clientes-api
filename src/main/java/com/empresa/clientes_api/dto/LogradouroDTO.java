@@ -1,17 +1,18 @@
 package com.empresa.clientes_api.dto;
 
-import lombok.*;
-
-import javax.validation.constraints.NotBlank;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Getter
 @Setter
-@ToString
 @NoArgsConstructor
-@AllArgsConstructor
 public class LogradouroDTO {
 
-    @NotBlank(message = "Logradouro é obrigatório")
+    private Long id;
     private String logradouro;
+    private Long idCliente;
+
 
 }

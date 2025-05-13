@@ -1,5 +1,6 @@
 package com.empresa.clientes_api.model;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import lombok.*;
 
 import javax.persistence.*;
@@ -30,7 +31,8 @@ public class Cliente {
     @Column(name = "logotipo") // Coluna para o logotipo no banco
     private byte[] logotipo;
 
-    @OneToMany(mappedBy = "cliente", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
+    @OneToMany(mappedBy = "cliente", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Logradouro> logradouros;
 
 }

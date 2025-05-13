@@ -1,11 +1,10 @@
 package com.empresa.clientes_api.controller;
 
 import com.empresa.clientes_api.dto.ClienteDTO;
-import com.empresa.clientes_api.dto.LogradouroDTO;
-import com.empresa.clientes_api.exception.ClienteJaCadastradoException;
 import com.empresa.clientes_api.model.Cliente;
 import com.empresa.clientes_api.service.ClienteService;
 import lombok.AllArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -28,12 +27,12 @@ public class ClienteController {
     public ResponseEntity<ClienteDTO> salvarCliente(
             @RequestParam("nome") String nome,
             @RequestParam("email") String email,
-            @RequestParam("logradouro") String logradouro,
+            @RequestParam("logradouro") List<String> logradouros,
             @RequestParam(value = "file", required = false) MultipartFile logotipo) {
 
-        ClienteDTO clienteDTO = clienteService.criarCliente(nome, email, Collections.singletonList(logradouro), logotipo);
+        // Aqui você já recebe a lista diretamente, não precisa converter
+        ClienteDTO clienteDTO = clienteService.criarCliente(nome, email, logradouros, logotipo);
 
-        // Retorna o DTO com os dados do cliente salvo
         return ResponseEntity.status(HttpStatus.CREATED).body(clienteDTO);
     }
 
@@ -51,56 +50,16 @@ public class ClienteController {
             Cliente cliente = clienteService.obterCliente(id);
             return ResponseEntity.ok(new ClienteDTO(cliente));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("erro", "Cliente não encontrado"));
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("erro", "Cliente não encontrado"));
         }
     }
 
-    // Atualizar cliente
-    @PutMapping("/atualizar-cliente/{id}")
-    public ResponseEntity<?> atualizarCliente(
-            @PathVariable Long id,
-            @RequestBody ClienteDTO clienteDTO) {
-        try {
-            ClienteDTO atualizado = clienteService.atualizarCliente(id, clienteDTO, false);
-            return ResponseEntity.ok(atualizado);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("erro", "Erro ao atualizar cliente: " + e.getMessage()));
-        }
-    }
-
-    /**
-     * Endpoint específico para atualizar apenas o logradouro de um cliente
-     */
-    @PutMapping("/{id}/atualizar-logradouro")
-    public ResponseEntity<?> atualizarLogradouro(
-            @PathVariable Long id,
-            @RequestBody LogradouroDTO logradouroDTO) {
-        try {
-            ClienteDTO atualizado = clienteService.atualizarLogradouro(id, logradouroDTO);
-            return ResponseEntity.ok(atualizado);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("erro", "Erro ao atualizar logradouro: " + e.getMessage()));
-        }
-    }
 
     // Excluir cliente
-    @DeleteMapping("/clientes/{id}")
+    @DeleteMapping("excluir-cliente/{id}")
     public ResponseEntity<?> excluirCliente(@PathVariable Long id) {
-        try {
-            boolean resultado = clienteService.deletar(id);
-            if (resultado) {
-                return ResponseEntity.ok(Map.of("mensagem", "Cliente excluído com sucesso"));
-            } else {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(Map.of("erro", "Cliente não encontrado"));
-            }
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("erro", "Erro ao excluir cliente: " + e.getMessage()));
-        }
+        clienteService.deletar(id);
+        return ResponseEntity.noContent().build();
     }
 
     // Upload de logotipo para cliente
@@ -116,4 +75,20 @@ public class ClienteController {
                     .body(Map.of("erro", "Erro ao atualizar logotipo: " + e.getMessage()));
         }
     }
+
+    // Endpoint para obter logotipo de um cliente
+    @GetMapping("/{id}/logo")
+    public ResponseEntity<byte[]> obterLogotipo(@PathVariable Long id) {
+        Cliente cliente = clienteService.buscarPorId(id);
+        byte[] imagem = cliente.getLogotipo();
+
+        if (imagem == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.IMAGE_PNG); // ou JPEG se for o caso
+        return new ResponseEntity<>(imagem, headers, HttpStatus.OK);
+    }
+
 }
