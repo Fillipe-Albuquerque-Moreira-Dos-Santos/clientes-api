@@ -43,14 +43,35 @@ public class ClienteController {
         return ResponseEntity.ok(clientes);
     }
 
-    // Carregar cliente por ID
-    @GetMapping("/carregar-clientes/{id}")
+    @GetMapping("/carregar-cliente/{id}")
     public ResponseEntity<?> carregarCliente(@PathVariable Long id) {
         try {
             Cliente cliente = clienteService.obterCliente(id);
+
+            if (cliente == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("erro", "Cliente não encontrado"));
+            }
+
             return ResponseEntity.ok(new ClienteDTO(cliente));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("erro", "Cliente não encontrado"));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("erro", "Erro inesperado: " + e.getMessage()));
+        }
+    }
+
+
+    // Atualizar cliente com suporte para multipart/form-data
+    @PutMapping("/atualizar-cliente/{id}")
+    public ResponseEntity<?> atualizarCliente(
+            @PathVariable Long id,
+            @ModelAttribute ClienteDTO clienteDTO) {
+        try {
+            ClienteDTO atualizado = clienteService.atualizarCliente(id, clienteDTO);
+            return ResponseEntity.ok(atualizado);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("erro", "Erro ao atualizar cliente: " + e.getMessage()));
         }
     }
 

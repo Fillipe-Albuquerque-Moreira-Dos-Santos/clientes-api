@@ -11,6 +11,10 @@ import java.util.List;
 public interface ClienteRepository extends JpaRepository<Cliente, Long> {
 
     boolean existsByEmail(@Email(message = "E-mail inválido") @NotBlank(message = "E-mail é obrigatório") String email);
+
     @EntityGraph(attributePaths = "logradouros")
-    List<Cliente> findAll(); // agora carrega os logradouros junto
+    List<Cliente> findAll();
+
+    Cliente findByEmail(String email); // para atualização
+
 }

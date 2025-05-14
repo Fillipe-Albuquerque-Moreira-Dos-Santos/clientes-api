@@ -10,7 +10,8 @@ import java.util.Optional;
 @Repository
 public interface LogradouroRepository extends JpaRepository<Logradouro, Long> {
 
-    Optional<Logradouro> findByLogradouro(String logradouro); // ✅ CORRETO
+    Optional<Logradouro> findByLogradouro(String logradouro);
+
 
 
 

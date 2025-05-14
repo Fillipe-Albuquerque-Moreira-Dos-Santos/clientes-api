@@ -9,7 +9,10 @@ import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @AllArgsConstructor
@@ -37,22 +40,38 @@ public class ClienteService {
             }
         }
 
-        // Primeiro salva o cliente sem logradouros para obter o ID
+        // Salva o cliente para obter ID
         Cliente salvo = clienteRepository.save(cliente);
 
-        List<Logradouro> listaLogradouros = logradouros.stream()
+        // Remove duplicados enviados
+        Set<String> logradourosUnicos = new HashSet<>(logradouros);
+
+        List<Logradouro> listaLogradouros = logradourosUnicos.stream()
                 .map(nomeLogradouro -> {
-                    Logradouro logradouro = logradouroRepository.findByLogradouro(nomeLogradouro)
-                            .orElseThrow(() -> new RuntimeException("Logradouro não encontrado: " + nomeLogradouro));
-                    logradouro.setCliente(salvo); // Vínculo essencial aqui
-                    return logradouro;
+                    // Busca se já existe um logradouro com esse nome
+                    Optional<Logradouro> existenteOpt = logradouroRepository.findByLogradouro(nomeLogradouro);
+
+                    if (existenteOpt.isPresent()) {
+                        Logradouro existente = existenteOpt.get();
+                        if (existente.getCliente() == null) {
+                            // Reutiliza o logradouro "órfão"
+                            existente.setCliente(salvo);
+                            return existente;
+                        } else {
+                            // Já está vinculado a outro cliente
+                            throw new RuntimeException("O logradouro \"" + nomeLogradouro + "\" já está vinculado a outro cliente.");
+                        }
+                    }
+
+                    // Se não existe, cria um novo
+                    Logradouro novo = new Logradouro();
+                    novo.setLogradouro(nomeLogradouro);
+                    novo.setCliente(salvo);
+                    return novo;
                 })
                 .collect(Collectors.toList());
 
-        // Atualiza os logradouros com o cliente associado
         logradouroRepository.saveAll(listaLogradouros);
-
-        // Se quiser manter bidirecional, pode setar os logradouros no cliente
         salvo.setLogradouros(listaLogradouros);
 
         return new ClienteDTO(salvo);
@@ -60,10 +79,9 @@ public class ClienteService {
 
 
 
-
     // Método para encontrar todos os clientes
     public List<ClienteDTO> findAllClientes() {
-        List<Cliente> clientes = clienteRepository.findAll(); // Obtém todos os clientes do repositório
+        List<Cliente> clientes = clienteRepository.findAll();
         return clientes.stream().map(ClienteDTO::new).collect(Collectors.toList());
     }
 
@@ -73,27 +91,25 @@ public class ClienteService {
                 .orElseThrow(() -> new RuntimeException("Cliente não encontrado"));
     }
 
-    public ClienteDTO atualizarCliente(Long id, ClienteDTO clienteDTO, boolean logradouroOnly) throws IOException {
+    public ClienteDTO atualizarCliente(Long id, ClienteDTO clienteDTO) throws IOException {
         Cliente cliente = obterCliente(id);
 
-        if (!logradouroOnly) {
-            // Se e-mail mudou, verificar duplicidade
-            if (!cliente.getEmail().equalsIgnoreCase(clienteDTO.getEmail()) &&
-                    clienteRepository.existsByEmail(clienteDTO.getEmail())) {
-                throw new IllegalArgumentException("E-mail já cadastrado.");
-            }
-
-            cliente.setNome(clienteDTO.getNome());
-            cliente.setEmail(clienteDTO.getEmail());
-
-            if (clienteDTO.getLogotipo() != null && !clienteDTO.getLogotipo().isEmpty()) {
-                cliente.setLogotipo(clienteDTO.getLogotipo().getBytes());
+        String novoEmail = clienteDTO.getEmail();
+        if (novoEmail != null && !novoEmail.equalsIgnoreCase(cliente.getEmail())) {
+            Cliente existente = clienteRepository.findByEmail(novoEmail);
+            if (existente != null && !existente.getId().equals(id)) {
+                throw new IllegalArgumentException("E-mail já está em uso por outro cliente.");
             }
         }
+
+        cliente.setNome(clienteDTO.getNome());
+        cliente.setEmail(novoEmail);
 
         Cliente clienteAtualizado = clienteRepository.save(cliente);
         return new ClienteDTO(clienteAtualizado);
     }
+
+
 
     public boolean deletar(Long id) {
         Cliente cliente = obterCliente(id);
